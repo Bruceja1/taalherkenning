@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import re
 from collections import defaultdict
+from decimal import Decimal
 
 df = pd.read_csv('languages.csv', sep = ',')
 
@@ -77,13 +78,13 @@ def get_language_probabilities(userInput):
         matching_trigram_frequencies = []
         for trigram in inputTrigrams:
             if trigram in trigram_frequencies[language].keys():
-                matching_trigram_frequencies.append(trigram_frequencies[language][trigram])
+                matching_trigram_frequencies.append(Decimal(trigram_frequencies[language][trigram]))
             else:
                 matching_trigram_frequencies.append(0) # Smoothing wordt later toegepast
         matching_bigram_frequencies = []
         for bigram in inputBigrams:
             if bigram in bigram_frequencies[language].keys():
-                matching_bigram_frequencies.append(bigram_frequencies[language][trigram])
+                matching_bigram_frequencies.append(Decimal(bigram_frequencies[language][trigram]))
             else:
                 matching_bigram_frequencies.append(0) # Ook hier wordt later smoothing toegepast
         print(f"De taal is {language} met de volgende matching trigram frequencies: {matching_trigram_frequencies}")
@@ -92,15 +93,15 @@ def get_language_probabilities(userInput):
         # De kansen van de trigrammen (en bigrammen) die wél voorkomen worden dan verlaagd met hetzelfde aantal. 
         for frequency in range(len(matching_trigram_frequencies)):
             if matching_trigram_frequencies[frequency] == 0:
-                matching_trigram_frequencies[frequency] += 0.00001
+                matching_trigram_frequencies[frequency] += Decimal(0.000001)
             else:
-                matching_trigram_frequencies[frequency] -= 0.00001
+                matching_trigram_frequencies[frequency] -= Decimal(0.000001)
         print(f"De taal is {language} met de volgende matching trigram frequencies: {matching_trigram_frequencies}")
         for frequency in range(len(matching_bigram_frequencies)):
             if matching_bigram_frequencies[frequency] == 0:
-                matching_bigram_frequencies[frequency] += 0.000001
+                matching_bigram_frequencies[frequency] += Decimal(0.000001)
             else:
-                matching_bigram_frequencies[frequency] -= 0.000001
+                matching_bigram_frequencies[frequency] -= Decimal(0.000001)
 
         # De formule van het trigram pdf document toepassen
         """ product_trigram_frequencies = np.prod(matching_trigram_frequencies)
@@ -112,7 +113,7 @@ def get_language_probabilities(userInput):
             product_bigram_frequencies = 9999999999
 
         probability = (product_trigram_frequencies) / (product_bigram_frequencies)  """
-        
+
         probability = (np.prod(matching_trigram_frequencies)) / (np.prod(matching_bigram_frequencies)) 
         language_probabilities[language] = probability
     
