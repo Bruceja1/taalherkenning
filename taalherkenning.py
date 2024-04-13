@@ -1,6 +1,7 @@
 # Dataset: https://www.kaggle.com/datasets/basilb2s/language-detection
 # Engels, Malayalam, Hindi, Tamil, Kannada, Frans, Spaans, Portugees, Italiaans, Russisch, Zweeds, Nederlands,
 # Arabisch, Turks, Duits, Deens, Grieks
+import numpy as np
 import pandas as pd
 import re
 from collections import defaultdict
@@ -65,12 +66,47 @@ def get_language_probabilities(userInput):
         inputTrigrams.append(trigram)
     print(f"De trigrammen van de input zijn: {inputTrigrams}")
 
-    inputBigrams = []
-    for i in range(1, len(userInput) - 2):
+    inputBigrams = [] 
+    for i in range(1, len(userInput) - 2): # Alleen de 'tussen' bigrammen worden opgeslagen
         bigram = userInput[i:i + 2]
         inputBigrams.append(bigram)
     print(f"De 'tussen' bigrammen van de input zijn: {inputBigrams}")
 
+    
+    for language in trigram_frequencies.keys():
+        matching_trigram_frequencies = []
+        for trigram in inputTrigrams:
+            if trigram in trigram_frequencies[language].keys():
+                matching_trigram_frequencies.append(trigram_frequencies[language][trigram])
+            else:
+                matching_trigram_frequencies.append(0) # Smoothing wordt later toegepast
+        matching_bigram_frequencies = []
+        for bigram in inputBigrams:
+            if bigram in bigram_frequencies[language].keys():
+                matching_bigram_frequencies.append(bigram_frequencies[language][trigram])
+            else:
+                matching_bigram_frequencies.append(0) # Ook hier wordt later smoothing toegepast
+        print(f"De taal is {language} met de volgende matching trigram frequencies: {matching_trigram_frequencies}")
+
+        # Smoothing: als het trigram (of bigram) niet voorkomt, deze toch een kleine kans toekennen. 
+        # De kansen van de trigrammen (en bigrammen) die wél voorkomen worden dan verlaagd met hetzelfde aantal. 
+        for frequency in range(len(matching_trigram_frequencies)):
+            if matching_trigram_frequencies[frequency] == 0:
+                matching_trigram_frequencies[frequency] += 0.0000000000000001
+            else:
+                matching_trigram_frequencies[frequency] -= 0.0000000000000001
+        print(f"De taal is {language} met de volgende matching trigram frequencies: {matching_trigram_frequencies}")
+        for frequency in range(len(matching_bigram_frequencies)):
+            if matching_bigram_frequencies[frequency] == 0:
+                matching_bigram_frequencies[frequency] += 0.0000000000000001
+            else:
+                matching_bigram_frequencies[frequency] -= 0.0000000000000001
+
+        # De formule van het trigram pdf document toepassen
+        probability = (np.prod(matching_trigram_frequencies)) / (np.prod(matching_bigram_frequencies)) 
+        language_probabilities[language] = probability
+    
+    return language_probabilities
 
 trigram_frequencies = get_trigram_frequencies(df)
 bigram_frequencies = get_bigram_frequencies(df)
@@ -80,7 +116,7 @@ bigram_frequencies = get_bigram_frequencies(df)
 
 while True:
     userInput = input("Geef een voorbeeldzin... \n")
-    m = re.compile(r'[a-zA-Z0-9().?!]')
+    m = re.compile(r'[a-zA-Z0-9().?! ]')
     if (m.match(userInput)):
         break
     else:
@@ -91,4 +127,8 @@ for s in symbols:
 userInput = userInput.lower()
 userInput = userInput.strip()
 print(f"De nieuwe input is: {userInput}")
+
+language_probabilities = defaultdict(int)
 get_language_probabilities(userInput)
+
+print(language_probabilities)
