@@ -92,17 +92,27 @@ def get_language_probabilities(userInput):
         # De kansen van de trigrammen (en bigrammen) die wél voorkomen worden dan verlaagd met hetzelfde aantal. 
         for frequency in range(len(matching_trigram_frequencies)):
             if matching_trigram_frequencies[frequency] == 0:
-                matching_trigram_frequencies[frequency] += 0.0000000000000001
+                matching_trigram_frequencies[frequency] += 0.00001
             else:
-                matching_trigram_frequencies[frequency] -= 0.0000000000000001
+                matching_trigram_frequencies[frequency] -= 0.00001
         print(f"De taal is {language} met de volgende matching trigram frequencies: {matching_trigram_frequencies}")
         for frequency in range(len(matching_bigram_frequencies)):
             if matching_bigram_frequencies[frequency] == 0:
-                matching_bigram_frequencies[frequency] += 0.0000000000000001
+                matching_bigram_frequencies[frequency] += 0.000001
             else:
-                matching_bigram_frequencies[frequency] -= 0.0000000000000001
+                matching_bigram_frequencies[frequency] -= 0.000001
 
         # De formule van het trigram pdf document toepassen
+        """ product_trigram_frequencies = np.prod(matching_trigram_frequencies)
+        product_bigram_frequencies = np.prod(matching_bigram_frequencies)
+
+        if product_trigram_frequencies == 0:
+            product_trigram_frequencies = 0.0000000001
+        if product_bigram_frequencies == 0:
+            product_bigram_frequencies = 9999999999
+
+        probability = (product_trigram_frequencies) / (product_bigram_frequencies)  """
+        
         probability = (np.prod(matching_trigram_frequencies)) / (np.prod(matching_bigram_frequencies)) 
         language_probabilities[language] = probability
     
@@ -113,9 +123,12 @@ bigram_frequencies = get_bigram_frequencies(df)
 
 """ for language in bigram_frequencies.keys():
     print(f"Taal: {language} heeft als som: {sum(bigram_frequencies[language].values())}") """
-
+languages = []
+for language in trigram_frequencies.keys():
+    languages.append(language)
 while True:
-    userInput = input("Geef een voorbeeldzin... \n")
+    print(f"De volgende talen zijn toegestaan: {languages}")
+    userInput = input("Geef een voorbeeldzin in een van de bovenstaande talen... \n")
     m = re.compile(r'[a-zA-Z0-9().?! ]')
     if (m.match(userInput)):
         break
@@ -131,4 +144,7 @@ print(f"De nieuwe input is: {userInput}")
 language_probabilities = defaultdict(int)
 get_language_probabilities(userInput)
 
-print(language_probabilities)
+for language in language_probabilities:
+    print(f"De 'kans' op {language} is {language_probabilities[language]}")
+
+print(f"De taal van de invoerzin is: {max(language_probabilities, key=language_probabilities.get)}")
