@@ -4,6 +4,7 @@
 import numpy as np
 import pandas as pd
 import re
+import time
 from collections import defaultdict
 from decimal import Decimal
 
@@ -15,7 +16,7 @@ df['Text'] = df['Text'].str.strip()
 symbols = ["!",",", ".", "?", "(", ")", '"', "'", "[", "]", ":", ";", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 for s in symbols:
     df['Text'] = df['Text'].str.replace(s,'')
-print(df.head(100))
+#print(df.head(100))
 #print(df.tail())
 #print(list(df.columns))
 #print(df.info)
@@ -80,13 +81,13 @@ def get_language_probabilities(userInput):
             if trigram in trigram_frequencies[language].keys():
                 matching_trigram_frequencies.append(Decimal(trigram_frequencies[language][trigram]))
             else:
-                matching_trigram_frequencies.append(0) # Smoothing wordt later toegepast
+                matching_trigram_frequencies.append(0) # Smoothing wordt hier later op toegepast
         matching_bigram_frequencies = []
         for bigram in inputBigrams:
             if bigram in bigram_frequencies[language].keys():
                 matching_bigram_frequencies.append(Decimal(bigram_frequencies[language][trigram]))
             else:
-                matching_bigram_frequencies.append(0) # Ook hier wordt later smoothing toegepast
+                matching_bigram_frequencies.append(0) # Ook hier wordt later smoothing op toegepast
         print(f"De taal is {language} met de volgende matching trigram frequencies: {matching_trigram_frequencies}")
 
         # Smoothing: als het trigram (of bigram) niet voorkomt, deze toch een kleine kans toekennen. 
@@ -104,16 +105,6 @@ def get_language_probabilities(userInput):
                 matching_bigram_frequencies[frequency] -= Decimal(0.000001)
 
         # De formule van het trigram pdf document toepassen
-        """ product_trigram_frequencies = np.prod(matching_trigram_frequencies)
-        product_bigram_frequencies = np.prod(matching_bigram_frequencies)
-
-        if product_trigram_frequencies == 0:
-            product_trigram_frequencies = 0.0000000001
-        if product_bigram_frequencies == 0:
-            product_bigram_frequencies = 9999999999
-
-        probability = (product_trigram_frequencies) / (product_bigram_frequencies)  """
-
         probability = (np.prod(matching_trigram_frequencies)) / (np.prod(matching_bigram_frequencies)) 
         language_probabilities[language] = probability
     
@@ -123,7 +114,7 @@ trigram_frequencies = get_trigram_frequencies(df)
 bigram_frequencies = get_bigram_frequencies(df)
 
 """ for language in bigram_frequencies.keys():
-    print(f"Taal: {language} heeft als som: {sum(bigram_frequencies[language].values())}") """
+    print(f"(Debugging) Taal: {language} heeft als som: {sum(bigram_frequencies[language].values())}") """
 languages = []
 for language in trigram_frequencies.keys():
     languages.append(language)
@@ -136,6 +127,8 @@ while True:
     else:
         print("De invoer mag alleen de volgende tekens bevatten: 'a-zA-Z0-9().?!'")
 
+start_time = time.time()
+
 for s in symbols:
     userInput = userInput.replace(s, '')
 userInput = userInput.lower()
@@ -146,6 +139,11 @@ language_probabilities = defaultdict(int)
 get_language_probabilities(userInput)
 
 for language in language_probabilities:
-    print(f"De 'kans' op {language} is {language_probabilities[language]}")
+    print(f"De kans op {language} is {language_probabilities[language]/sum(language_probabilities.values())}")
 
 print(f"De taal van de invoerzin is: {max(language_probabilities, key=language_probabilities.get)}")
+
+end_time = time.time()
+final_time = end_time - start_time
+
+print(f"De tijdsduur was {final_time}s")
